@@ -1,0 +1,32 @@
+# Arquivos de dependências e build
+/bin/
+/obj/
+/vendor/
+
+# Arquivos temporários do sistema operacional
+.DS_Store           # macOS
+Thumbs.db           # Windows
+
+# Arquivos específicos do VS Code
+.vscode/
+
+# Arquivos gerados pelo Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+
+# Arquivos de cache de dependências
+go.sum
+go.mod
+
+# Arquivos de log
+*.log
+
+# Ignorar arquivo .env (variáveis de ambiente)
+.env
+
+#outros
+.zip
