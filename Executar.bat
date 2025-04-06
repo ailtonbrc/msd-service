@@ -23,14 +23,13 @@ if errorlevel 1 (
     goto esperando_docker
 )
 
-echo ✅ Docker está ativo!
+echo --->>>> Docker está ativo!
 
 echo.
 echo ===============================
 echo Subindo containers...
 echo ===============================
-cd /d D:\Desenvolvimento_React\MSD
-docker-compose up -d
+cd /d D:\Desenvolvimento_React\msd-service docker-compose up -d
 
 echo.
 echo ===============================
@@ -40,13 +39,10 @@ cd server
 go build -o clinica_server.exe ./cmd/api
 
 echo.
-echo Limpando a tela...
-echo ===============================
-    cls
-echo.
 echo Iniciando API...
 echo ===============================
 clinica_server.exe
+
 
 endlocal
 pause

@@ -1,0 +1,24 @@
+name: clinica
+
+services:
+  db:
+    image: postgres:15
+    container_name: postgres_msd
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: db_clinica
+    volumes:
+      - msd_pgdata:/var/lib/postgresql/data
+    networks:
+      - msdnet
+
+volumes:
+  msd_pgdata: {}
+
+networks:
+  msdnet:
+    driver: bridge

@@ -1,0 +1,17 @@
+# Go
+/server/*.exe
+/server/bin/
+/server/vendor/
+
+# Node.js / React
+/msd-tea-terapy/node_modules/
+/msd-tea-terapy/.next/
+/msd-tea-terapy/dist/
+
+/server/.env
+/msd-tea-terapy/.env
+
+# Geral
+.env
+.DS_Store
+*.log

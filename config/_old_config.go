@@ -45,9 +45,7 @@ type JWTConfig struct {
 // Load carrega as configurações do ambiente
 func Load() (*Config, error) {
 	// Carregar variáveis de ambiente do arquivo .env se existir
-	log.Println("📦 Carregando configurações do .env...")
 	_ = godotenv.Load()
-	log.Println("🚀 Carregando configuração do banco de dados")
 
 	// Configurações do servidor
 	port := getEnv("SERVER_PORT", "9000")
@@ -67,7 +65,7 @@ func Load() (*Config, error) {
 	jwtSecret := getEnv("JWT_SECRET", "your-secret-key")
 	jwtAccessExp, _ := strconv.Atoi(getEnv("JWT_ACCESS_EXP", "15"))      // 15 minutos
 	jwtRefreshExp, _ := strconv.Atoi(getEnv("JWT_REFRESH_EXP", "10080")) // 7 dias
-	
+
 	log.Println("✅ Configurações carregadas com sucesso")
 	log.Printf("🗄️ Conectando ao banco: %s@%s:%s/%s", dbUser, dbHost, dbPort, dbName)
 	log.Printf("🔐 JWT Secret (parcial): %s...", jwtSecret[:10])
@@ -97,9 +95,6 @@ func Load() (*Config, error) {
 
 // DSN retorna a string de conexão com o banco de dados
 func (c *DatabaseConfig) DSN() string {
-	fmt.Printf("\nhost=%s port=%s user=%s password=%s dbname=%s sslmode=%s\n",
-		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode)
-
 	return fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.Host, c.Port, c.User, c.Password, c.DBName, c.SSLMode,
