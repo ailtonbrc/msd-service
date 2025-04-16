@@ -17,8 +17,8 @@ func ConfiguraRotasDeUsuario(router *gin.RouterGroup, db *gorm.DB) {
 	cfg, _ := config.Load()
 
 	// Grupo de rotas de usuários (todas protegidas)
-	users := router.Group("/users")
-	users.Use(middlewares.AuthMiddleware(cfg))
+	usuarios := router.Group("/usuarios")
+	usuarios.Use(middlewares.AuthMiddleware(cfg))
 	{
 		// TODO Verificar como vai tratar a questão dos Perfis de Acesso
 		// users.GET("", middlewares.RequirePermission("users.view"), userHandler.GetUsers)
@@ -28,11 +28,11 @@ func ConfiguraRotasDeUsuario(router *gin.RouterGroup, db *gorm.DB) {
 		// users.DELETE("/:id", middlewares.RequirePermission("users.delete"), userHandler.DeleteUser)
 		// users.PUT("/:id/password", userHandler.ChangePassword) // Permissão verificada no handler
 
-		users.GET("", userHandler.BuscaUsuarios)
-		users.GET("/:id", userHandler.BuscaUsuario)
-		users.POST("", userHandler.CreateUsuario)
-		users.PUT("/:id", userHandler.UpdateUsuario)
-		users.DELETE("/:id", userHandler.DeleteUsuario)
-		users.PUT("/:id/password", userHandler.ChangePassword) // Permissão verificada no handler
+		usuarios.GET("", userHandler.BuscaUsuarios)
+		usuarios.GET("/:id", userHandler.BuscaUsuario)
+		usuarios.POST("", userHandler.CreateUsuario)
+		usuarios.PUT("/:id", userHandler.UpdateUsuario)
+		usuarios.DELETE("/:id", userHandler.DeleteUsuario)
+		usuarios.PUT("/:id/password", userHandler.ChangePassword) // Permissão verificada no handler
 	}
 }
