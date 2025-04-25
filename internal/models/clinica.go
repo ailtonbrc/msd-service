@@ -1,16 +1,19 @@
 package models
 
-import "time"
+import (
+	"gorm.io/gorm"
+)
 
 type Clinica struct {
-    ID        uint      `gorm:"primaryKey" json:"id"`
-    Nome      string    `json:"nome"`
-    CNPJ      string    `gorm:"unique" json:"cnpj"`
-    Endereco  string    `json:"endereco"`
-    Telefone  string    `json:"telefone"`
-    CriadoEm  time.Time `gorm:"autoCreateTime" json:"criado_em"`
+	gorm.Model
+
+	Nome     string `gorm:"not null" json:"nome"`
+	CNPJ     string `gorm:"unique;not null" json:"cnpj"`
+	Endereco string `json:"endereco"`
+	Telefone string `json:"telefone"`
 }
 
+// TableName especifica o nome da tabela
 func (Clinica) TableName() string {
-    return "clinicas"
+	return "clinica"
 }

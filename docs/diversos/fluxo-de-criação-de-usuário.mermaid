@@ -1,0 +1,75 @@
+sequenceDiagram
+    participant Client as Frontend
+    participant Handler as UserHandler
+    participant Service as UserService
+    participant Validator as UserValidator
+    participant Repository as UserRepository
+    participant DB as Banco de Dados
+    
+    Client->>Handler: POST /api/users (JSON)
+    Note over Handler: Recebe CreateUserRequest
+    
+    Handler->>Handler: Valida formato JSON
+    
+    alt Formato JSON inválido
+        Handler-->>Client: 400 Bad Request
+    else Formato JSON válido
+        Handler->>Service: CreateUser(req)
+        
+        Service->>Validator: ValidateForCreation(req)
+        
+        Validator->>Repository: ExistsByUsername(req.Username)
+        Repository->>DB: SELECT COUNT(*) FROM users WHERE username = ?
+        DB-->>Repository: Resultado
+        Repository-->>Validator: exists (bool)
+        
+        alt Username já existe
+            Validator-->>Service: ValidationError
+            Service-->>Handler: ValidationError
+            Handler-->>Client: 400 Bad Request (username já existe)
+        else Username disponível
+            
+            Validator->>Repository: ExistsByEmail(req.Email)
+            Repository->>DB: SELECT COUNT(*) FROM users WHERE email = ?
+            DB-->>Repository: Resultado
+            Repository-->>Validator: exists (bool)
+            
+            alt Email já existe
+                Validator-->>Service: ValidationError
+                Service-->>Handler: ValidationError
+                Handler-->>Client: 400 Bad Request (email já existe)
+            else Email disponível
+                
+                Validator->>Repository: FindByID(req.RoleID)
+                Repository->>DB: SELECT * FROM roles WHERE id = ?
+                DB-->>Repository: Resultado
+                Repository-->>Validator: role
+                
+                alt Role não existe
+                    Validator-->>Service: ValidationError
+                    Service-->>Handler: ValidationError
+                    Handler-->>Client: 400 Bad Request (role não existe)
+                else Role existe
+                    
+                    Validator-->>Service: Validação OK
+                    
+                    Service->>Service: HashPassword(req.Password)
+                    
+                    Service->>Repository: Create(user)
+                    Repository->>DB: INSERT INTO users
+                    DB-->>Repository: ID do novo usuário
+                    Repository-->>Service: Sucesso
+                    
+                    Service->>Repository: FindByIDWithRole(user.ID)
+                    Repository->>DB: SELECT * FROM users JOIN roles WHERE users.id = ?
+                    DB-->>Repository: Usuário com Role
+                    Repository-->>Service: user
+                    
+                    Service->>Service: Converte para UserDTO
+                    
+                    Service-->>Handler: UserDTO
+                    Handler-->>Client: 201 Created (UserDTO)
+                end
+            end
+        end
+    end
