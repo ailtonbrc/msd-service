@@ -1,6 +1,6 @@
 @echo off
 echo ================================
-echo 📦 Iniciando push para o GitHub...
+echo Iniciando push para o GitHub...
 echo ================================
 
 REM Navega até a raiz do projeto (caso esteja fora)
