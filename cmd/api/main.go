@@ -7,8 +7,6 @@ import (
 	"clinica_server/internal/api/server"
 	"clinica_server/internal/db"
 
-	//"clinica_server/internal/server"
-
 	"go.uber.org/zap"
 )
 func main() {
