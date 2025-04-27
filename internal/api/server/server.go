@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"clinica_server/internal/models"
 	"clinica_server/internal/repository"
 	"clinica_server/internal/service"
+	"clinica_server/internal/utils"
 	"clinica_server/internal/validator"
 
 	"github.com/gin-contrib/cors"
@@ -45,6 +47,9 @@ func NewServer(cfg *config.Config, db *gorm.DB) *Server {
 		log.Fatalf("Erro ao configurar logger: %v", err)
 	}
 
+	// Configurar o Gin
+	configureGin(cfg.Environment)
+
 	router := gin.Default()
 
 	// Configurar CORS
@@ -63,6 +68,19 @@ func NewServer(cfg *config.Config, db *gorm.DB) *Server {
 		db:     db,
 		logger: logger,
 	}
+}
+
+// configureGin configura o framework Gin
+func configureGin(environment string) {
+	// Configurar o modo do Gin
+	if environment == "production" {
+		gin.SetMode(gin.ReleaseMode)
+	}
+	
+	// Redirecionar logs para um arquivo
+	gin.DisableConsoleColor()
+	f, _ := os.Create("gin.log")
+	gin.DefaultWriter = io.MultiWriter(f)
 }
 
 // Run inicia o servidor HTTP
@@ -86,6 +104,10 @@ func (s *Server) Run() error {
 	// Iniciar servidor em uma goroutine
 	go func() {
 		s.logger.Info("Servidor iniciado", zap.String("porta", s.cfg.Server.Port))
+
+		// Exibir informações do servidor
+		utils.DisplayServerInfo(s.cfg)
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			s.logger.Fatal("Erro ao iniciar servidor", zap.Error(err))
 		}
@@ -134,9 +156,9 @@ func (s *Server) setupRoutes() {
 	// Configurar handlers
 	pacienteHandler := handlers.NewPacienteHandler(pacienteService, s.logger)
 
-	// Configurar rotas para cada módulo
-	routes.ConfiguraRotasDeAutenticacao(api, s.db, s.cfg)
-	routes.ConfiguraRotasDeUsuario(api, s.db)
+	// Configurar rotas para cada módulo - Passando authMiddleware em vez de cfg
+	routes.ConfiguraRotasDeAutenticacao(api, s.db, authMiddleware)
+	routes.ConfiguraRotasDeUsuario(api, s.db, authMiddleware)
 	
 	// Configurar rotas de pacientes
 	routes.SetupPacienteRoutes(s.router, pacienteHandler, authMiddleware, s.logger)

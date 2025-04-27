@@ -1,130 +1,195 @@
 package service
 
 import (
-	"clinica_server/config"
+	"clinica_server/internal/auth"
 	"clinica_server/internal/models"
+	"clinica_server/internal/repository"
 	"clinica_server/internal/utils"
 	"errors"
+	"time"
 
 	"gorm.io/gorm"
 )
 
 // AuthService gerencia a autenticação de usuários
 type AuthService struct {
-	db  *gorm.DB
-	cfg *config.Config
+    userRepo   repository.UsuarioRepository
+    jwtService auth.JWTService
 }
 
 // NewAuthService cria um novo serviço de autenticação
-func NewAuthService(db *gorm.DB, cfg *config.Config) *AuthService {
-	return &AuthService{
-		db:  db,
-		cfg: cfg,
-	}
+func NewAuthService(userRepo repository.UsuarioRepository, jwtService auth.JWTService) *AuthService {
+    return &AuthService{
+        userRepo:   userRepo,
+        jwtService: jwtService,
+    }
 }
 
 // LoginResponse representa a resposta do login
 type LoginResponse struct {
-	Usuario      models.UsuarioDTO `json:"usuario"`
-	AccessToken  string            `json:"access_token"`
-	RefreshToken string            `json:"refresh_token"`
-	ExpiresIn    int               `json:"expires_in"`
+    Usuario      models.UsuarioDTO `json:"usuario"`
+    AccessToken  string            `json:"access_token"`
+    RefreshToken string            `json:"refresh_token"`
+    ExpiresIn    int               `json:"expires_in"`
+}
+
+// getPermissionsForRole retorna as permissões para um determinado perfil
+func (s *AuthService) getPermissionsForRole(role string) []string {
+    // Mapeamento de perfis para permissões
+    rolePermissions := map[string][]string{
+        "admin": {
+            "pacientes:view", "pacientes:create", "pacientes:update", "pacientes:delete",
+            "usuarios:view", "usuarios:create", "usuarios:update", "usuarios:delete",
+            // Adicione outras permissões conforme necessário
+        },
+        "medico": {
+            "pacientes:view", "pacientes:create", "pacientes:update",
+            // Adicione outras permissões conforme necessário
+        },
+        "atendente": {
+            "pacientes:view", "pacientes:create",
+            // Adicione outras permissões conforme necessário
+        },
+        "usuario": {
+            "pacientes:view",
+            // Adicione outras permissões conforme necessário
+        },
+    }
+
+    // Retorna as permissões para o perfil ou uma lista vazia se o perfil não existir
+    if permissions, exists := rolePermissions[role]; exists {
+        return permissions
+    }
+    return []string{}
 }
 
 // Login autentica um usuário e retorna tokens JWT
 func (s *AuthService) Login(email, senha string) (*LoginResponse, error) {
-	var user models.Usuario
+    // Buscar usuário pelo email usando o repositório
+    user, err := s.userRepo.BuscaPorEmail(email)
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, errors.New("usuário não encontrado")
+        }
+        return nil, err
+    }
 
-	// Buscar usuário pelo username
-	result := s.db.Where("LOWER(email) = LOWER(?)", email).First(&user)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			return nil, errors.New("usuário não encontrado")
-		}
-		return nil, result.Error
-	}
+    // Verificar se o usuário está ativo
+    if !user.Ativo {
+        return nil, errors.New("usuário inativo")
+    }
 
-	// Verificar se o usuário está ativo
-	if !user.Ativo {
-		return nil, errors.New("usuário inativo")
-	}
+    // Verifica se a senha informada corresponde ao hash armazenado
+    if !utils.CheckPasswordHash(senha, user.Senha) {
+        return nil, errors.New("senha incorreta")
+    }
 
-	// senhash, err := utils.HashPassword(password)
-	// fmt.Printf("Senha hash: %s\n", senhash)
+    // Definir permissões com base no perfil do usuário
+    roles := []string{user.Perfil}
+    permissions := s.getPermissionsForRole(user.Perfil)
+    scopes := []string{}      // Preencher conforme necessário
 
-	// // Verificar senha
-	// fmt.Printf("Senha: %s, SenhaBD: %s", password, user.PasswordHash)
+    // Gerar tokens usando o JWTService
+    accessToken, err := s.jwtService.GenerateToken(
+        user.ID,
+        user.Email,
+        user.Email,
+        roles,
+        permissions,
+        scopes,
+        time.Hour, // Duração do token de acesso
+    )
+    if err != nil {
+        return nil, err
+    }
 
-	// Verifica se a senha informada corresponde ao hash armazenado
-	if !utils.CheckPasswordHash(senha, user.Senha) {
-		return nil, errors.New("senha incorreta")
-	}
+    refreshToken, err := s.jwtService.GenerateToken(
+        user.ID,
+        user.Email,
+        user.Email,
+        roles,
+        permissions,
+        scopes,
+        time.Hour*24*7, // Duração do token de refresh (7 dias)
+    )
+    if err != nil {
+        return nil, err
+    }
 
-	// Gerar tokens
-	accessToken, err := utils.GenerateAccessToken(user.ID, user.Email, user.Perfil, s.cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	refreshToken, err := utils.GenerateRefreshToken(user.ID, user.Email, s.cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &LoginResponse{
-		Usuario:      user.ToDTO(),
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int(s.cfg.JWT.AccessTokenExp.Minutes()),
-	}, nil
+    return &LoginResponse{
+        Usuario:      user.ToDTO(),
+        AccessToken:  accessToken,
+        RefreshToken: refreshToken,
+        ExpiresIn:    60, // 1 hora em minutos
+    }, nil
 }
 
 // RefreshToken renova o token de acesso usando um token de refresh
 func (s *AuthService) RefreshToken(refreshToken string) (*LoginResponse, error) {
-	// Validar token de refresh
-	claims, err := utils.ValidateToken(refreshToken, s.cfg)
-	if err != nil {
-		return nil, err
-	}
+    // Validar token de refresh
+    claims, err := s.jwtService.ValidateToken(refreshToken)
+    if err != nil {
+        return nil, err
+    }
 
-	// Buscar usuário
-	var user models.Usuario
-	result := s.db.Where("LOWER(email) = LOWER(?)", claims.Subject).First(&user)
-	if result.Error != nil {
-		return nil, result.Error
-	}
+    // Buscar usuário pelo email usando o repositório
+    user, err := s.userRepo.BuscaPorEmail(claims.Email)
+    if err != nil {
+        return nil, err
+    }
 
-	// Verificar se o usuário está ativo
-	if !user.Ativo {
-		return nil, errors.New("usuário inativo")
-	}
+    // Verificar se o usuário está ativo
+    if !user.Ativo {
+        return nil, errors.New("usuário inativo")
+    }
 
-	// Gerar novo token de acesso
-	newAccessToken, err := utils.GenerateAccessToken(user.ID, user.Email, user.Perfil, s.cfg)
-	if err != nil {
-		return nil, err
-	}
+    // Atualizar permissões com base no perfil atual do usuário
+    // Isso garante que as permissões estejam atualizadas mesmo se o perfil do usuário mudar
+    roles := []string{user.Perfil}
+    permissions := s.getPermissionsForRole(user.Perfil)
 
-	// Gerar novo token de refresh
-	newRefreshToken, err := utils.GenerateRefreshToken(user.ID, user.Email, s.cfg)
-	if err != nil {
-		return nil, err
-	}
+    // Gerar novo token usando o JWTService
+    newAccessToken, err := s.jwtService.GenerateToken(
+        user.ID,
+        user.Email,
+        user.Email,
+        roles,
+        permissions,
+        claims.Scopes,
+        time.Hour, // Duração do token de acesso
+    )
+    if err != nil {
+        return nil, err
+    }
 
-	return &LoginResponse{
-		Usuario:      user.ToDTO(),
-		AccessToken:  newAccessToken,
-		RefreshToken: newRefreshToken,
-		ExpiresIn:    int(s.cfg.JWT.AccessTokenExp.Minutes()),
-	}, nil
+    // Gerar novo token de refresh
+    newRefreshToken, err := s.jwtService.GenerateToken(
+        user.ID,
+        user.Email,
+        user.Email,
+        roles,
+        permissions,
+        claims.Scopes,
+        time.Hour*24*7, // Duração do token de refresh (7 dias)
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    return &LoginResponse{
+        Usuario:      user.ToDTO(),
+        AccessToken:  newAccessToken,
+        RefreshToken: newRefreshToken,
+        ExpiresIn:    60, // 1 hora em minutos
+    }, nil
 }
 
 // GetUserByID busca um usuário pelo ID
 func (s *AuthService) GetUserByID(userID uint) (*models.Usuario, error) {
-	var user models.Usuario
-	result := s.db.First(&user, userID)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &user, nil
+    // Buscar usuário pelo ID usando o repositório
+    user, err := s.userRepo.BuscaPorID(userID)
+    if err != nil {
+        return nil, err
+    }
+    return user, nil
 }

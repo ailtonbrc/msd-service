@@ -56,22 +56,22 @@ func Load() (*Config, error) {
 	idleTimeout, _ := strconv.Atoi(getEnv("SERVER_IDLE_TIMEOUT", "60"))
 
 	// Configurações do banco de dados
-	dbHost := getEnv("DB_HOST", "localhost")
-	dbPort := getEnv("DB_PORT", "5432")
-	dbUser := getEnv("DB_USER", "postgres")
-	dbPassword := getEnv("DB_PASSWORD", "postgres")
-	dbName := getEnv("DB_NAME", "db_clinica")
-	dbSSLMode := getEnv("DB_SSLMODE", "disable")
+	dbHost 		:= getEnv("DB_HOST", "localhost")
+	dbPort 		:= getEnv("DB_PORT", "5432")
+	dbUser 		:= getEnv("DB_USER", "postgres")
+	dbPassword 	:= getEnv("DB_PASSWORD", "postgres")
+	dbName 		:= getEnv("DB_NAME", "db_clinica")
+	dbSSLMode 	:= getEnv("DB_SSLMODE", "disable")
 
 	// Configurações do JWT
-	jwtSecret := getEnv("JWT_SECRET", "your-secret-key")
+	jwtSecret 		:= getEnv("JWT_SECRET", "your-secret-key")
 	jwtAccessExp, _ := strconv.Atoi(getEnv("JWT_ACCESS_EXP", "15"))      // 15 minutos
 	jwtRefreshExp, _ := strconv.Atoi(getEnv("JWT_REFRESH_EXP", "10080")) // 7 dias
 
 	log.Println("✅ Configurações carregadas com sucesso")
 	log.Printf("🗄️ Conectando ao banco: %s@%s:%s/%s", dbUser, dbHost, dbPort, dbName)
 	log.Printf("🔐 JWT Secret (parcial): %s...", jwtSecret[:10])
-
+	
 	return &Config{
 		Server: ServerConfig{
 			Port:         port,

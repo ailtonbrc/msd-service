@@ -10,7 +10,7 @@ import (
 	"clinica_server/internal/auth"
 	"clinica_server/internal/models"
 	"clinica_server/internal/repository"
-	"clinica_server/utils/validacao"
+	"clinica_server/internal/utils/validacao"
 )
 
 // Erros de validação específicos para pacientes
@@ -120,7 +120,7 @@ func (v *DefaultPacienteValidator) ValidateCreate(ctx context.Context, paciente 
 	}
 	
 	// Validar dados do responsável para menores de idade
-	idade := validacao.CalculateAge(paciente.DataNascimento)
+	idade := validacao.Calcularidade(paciente.DataNascimento)
 	if idade < 18 {
 		if paciente.NomeResponsavel == "" {
 			return ErrResponsavelRequired
@@ -194,7 +194,7 @@ func (v *DefaultPacienteValidator) ValidateUpdate(ctx context.Context, paciente 
 	}
 	
 	// Validar dados do responsável para menores de idade
-	idade := validacao.CalculateAge(paciente.DataNascimento)
+	idade := validacao.Calcularidade(paciente.DataNascimento)
 	if idade < 18 {
 		if paciente.NomeResponsavel == "" {
 			paciente.NomeResponsavel = existingPaciente.NomeResponsavel

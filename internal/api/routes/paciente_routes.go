@@ -6,7 +6,7 @@ import (
 	"go.uber.org/zap"
 
 	"clinica_server/internal/api/handlers"
-	"clinica_server/internal/api/middleware"
+	middleware "clinica_server/internal/api/middleware"
 )
 
 // SetupPacienteRoutes configura as rotas relacionadas a pacientes

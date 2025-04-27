@@ -5,7 +5,7 @@ import (
 )
 
 // CalculateAge calcula a idade com base na data de nascimento
-func Calculaidade(dataAniversario time.Time) int {
+func Calcularidade(dataAniversario time.Time) int {
 	if dataAniversario.IsZero() {
 		return 0
 	}

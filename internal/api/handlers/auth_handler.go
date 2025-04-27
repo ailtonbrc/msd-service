@@ -3,12 +3,10 @@ package handlers
 import (
 	"net/http"
 
-	"clinica_server/config"
 	"clinica_server/internal/service"
 	"clinica_server/internal/utils"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 // AuthHandler gerencia as requisições de autenticação
@@ -17,10 +15,17 @@ type AuthHandler struct {
 }
 
 // NewAuthHandler cria um novo handler de autenticação
-func NewAuthHandler(db *gorm.DB, cfg *config.Config) *AuthHandler {
-	return &AuthHandler{
-		authService: service.NewAuthService(db, cfg),
-	}
+// func NewAuthHandler(db *gorm.DB, cfg *config.Config) *AuthHandler {
+// 	return &AuthHandler{
+// 		authService: service.NewAuthService(db, cfg),
+// 	}
+// }
+
+// NewAuthHandler cria um novo handler de autenticação
+func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+    return &AuthHandler{
+        authService: authService,
+    }
 }
 
 // LoginRequest representa os dados de login

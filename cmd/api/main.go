@@ -4,8 +4,10 @@ import (
 	"log"
 
 	"clinica_server/config"
+	"clinica_server/internal/api/server"
 	"clinica_server/internal/db"
-	"clinica_server/internal/server"
+
+	//"clinica_server/internal/server"
 
 	"go.uber.org/zap"
 )
@@ -34,6 +36,7 @@ func main() {
 
 	// Inicializar e executar o servidor
 	s := server.NewServer(cfg, database)
+	
 	if err := s.Run(); err != nil {
 		log.Fatalf("Erro ao iniciar o servidor: %v", err)
 	}

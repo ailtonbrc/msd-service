@@ -35,7 +35,7 @@
 ## 7. Criar o arquivo de Rotas
 
 - **Path:** `internal/api/routes/arquivo.go`
-- Configurar rotas com middlewares de autenticação e autorização
+- Configurar rotas com middleware de autenticação e autorização
 
 ## 8. Ajustar o arquivo `Server.go`
 

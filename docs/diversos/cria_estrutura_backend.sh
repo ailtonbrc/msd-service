@@ -18,7 +18,7 @@ echo -e "${GREEN}Criando estrutura de diretórios...${NC}"
 mkdir -p cmd/api
 mkdir -p config
 mkdir -p internal/api/handlers
-mkdir -p internal/api/middlewares
+mkdir -p internal/api/middleware
 mkdir -p internal/api/routes
 mkdir -p internal/models
 mkdir -p internal/repository
@@ -784,8 +784,8 @@ func ValidationErrorResponse(c *gin.Context, message string, errors interface{})
 EOF
 
 # Criar arquivo auth.go (middleware)
-cat > internal/api/middlewares/auth.go << 'EOF'
-package middlewares
+cat > internal/api/middleware/auth.go << 'EOF'
+package middleware
 
 import (
 	"net/http"
@@ -837,8 +837,8 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 EOF
 
 # Criar arquivo permission.go (middleware)
-cat > internal/api/middlewares/permission.go << 'EOF'
-package middlewares
+cat > internal/api/middleware/permission.go << 'EOF'
+package middleware
 
 import (
 	"net/http"
@@ -894,8 +894,8 @@ func RequirePermission(permission string) gin.HandlerFunc {
 EOF
 
 # Criar arquivo logger.go (middleware)
-cat > internal/api/middlewares/logger.go << 'EOF'
-package middlewares
+cat > internal/api/middleware/logger.go << 'EOF'
+package middleware
 
 import (
 	"time"
@@ -1548,7 +1548,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/yourusername/simple-erp-service/config"
 	"github.com/yourusername/simple-erp-service/internal/api/handlers"
-	"github.com/yourusername/simple-erp-service/internal/api/middlewares"
+	"github.com/yourusername/simple-erp-service/internal/api/middleware"
 	"gorm.io/gorm"
 )
 
@@ -1563,7 +1563,7 @@ func SetupAuthRoutes(router *gin.RouterGroup, db *gorm.DB, cfg *config.Config) {
 		
 		// Rotas protegidas
 		protected := auth.Group("")
-		protected.Use(middlewares.AuthMiddleware(cfg))
+		protected.Use(middleware.AuthMiddleware(cfg))
 		{
 			protected.POST("/logout", authHandler.Logout)
 			protected.GET("/me", authHandler.GetMe)
@@ -1580,7 +1580,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/yourusername/simple-erp-service/config"
 	"github.com/yourusername/simple-erp-service/internal/api/handlers"
-	"github.com/yourusername/simple-erp-service/internal/api/middlewares"
+	"github.com/yourusername/simple-erp-service/internal/api/middleware"
 	"gorm.io/gorm"
 )
 
@@ -1593,13 +1593,13 @@ func SetupUserRoutes(router *gin.RouterGroup, db *gorm.DB) {
 
 	// Grupo de rotas de usuários (todas protegidas)
 	users := router.Group("/users")
-	users.Use(middlewares.AuthMiddleware(cfg))
+	users.Use(middleware.AuthMiddleware(cfg))
 	{
-		users.GET("", middlewares.RequirePermission("users.view"), userHandler.GetUsers)
-		users.GET("/:id", middlewares.RequirePermission("users.view"), userHandler.GetUser)
-		users.POST("", middlewares.RequirePermission("users.create"), userHandler.CreateUser)
-		users.PUT("/:id", middlewares.RequirePermission("users.edit"), userHandler.UpdateUser)
-		users.DELETE("/:id", middlewares.RequirePermission("users.delete"), userHandler.DeleteUser)
+		users.GET("", middleware.RequirePermission("users.view"), userHandler.GetUsers)
+		users.GET("/:id", middleware.RequirePermission("users.view"), userHandler.GetUser)
+		users.POST("", middleware.RequirePermission("users.create"), userHandler.CreateUser)
+		users.PUT("/:id", middleware.RequirePermission("users.edit"), userHandler.UpdateUser)
+		users.DELETE("/:id", middleware.RequirePermission("users.delete"), userHandler.DeleteUser)
 		users.PUT("/:id/password", userHandler.ChangePassword) // Permissão verificada no handler
 	}
 }

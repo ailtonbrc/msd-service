@@ -2,9 +2,8 @@
 package models
 
 import (
+	"clinica_server/internal/utils/validacao"
 	"time"
-
-	"github.com/seu-usuario/msd-service/utils/validacao"
 )
 
 // PacienteDTO representa a versão simplificada do paciente para listagens
@@ -89,7 +88,7 @@ func (c *DefaultPacienteDTOConverter) ToDTO(paciente *Paciente) PacienteDTO {
 		ID:             paciente.ID,
 		Nome:           paciente.Nome,
 		DataNascimento: paciente.DataNascimento,
-		Idade:          validacao.CalculateAge(paciente.DataNascimento),
+		Idade:          validacao.Calcularidade(paciente.DataNascimento),
 		Genero:         paciente.Genero,
 		CPF:            paciente.CPF,
 		Telefone:       paciente.Telefone,
@@ -109,7 +108,7 @@ func (c *DefaultPacienteDTOConverter) ToDetailDTO(paciente *Paciente) PacienteDe
 		ID:                 paciente.ID,
 		Nome:               paciente.Nome,
 		DataNascimento:     paciente.DataNascimento,
-		Idade:              validacao.CalculateAge(paciente.DataNascimento),
+		Idade:              validacao.Calcularidade(paciente.DataNascimento),
 		Genero:             paciente.Genero,
 		CPF:                paciente.CPF,
 		RG:                 paciente.RG,

@@ -12,6 +12,11 @@ import (
 	"clinica_server/internal/auth"
 )
 
+// GetJWTService retorna o serviço JWT usado pelo middleware
+func (m *AuthMiddleware) GetJWTService() auth.JWTService {
+    return m.jwtService
+}
+
 // AuthMiddleware é responsável por verificar a autenticação do usuário
 type AuthMiddleware struct {
 	jwtService auth.JWTService
