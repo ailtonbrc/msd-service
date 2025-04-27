@@ -12,9 +12,10 @@ import (
 
 // Config armazena todas as configurações da aplicação
 type Config struct {
-	Server   ServerConfig
-	Database DatabaseConfig
-	JWT      JWTConfig
+	Server      ServerConfig
+	Database    DatabaseConfig
+	JWT         JWTConfig
+	Environment string
 }
 
 // ServerConfig armazena configurações do servidor HTTP
@@ -38,6 +39,7 @@ type DatabaseConfig struct {
 // JWTConfig armazena configurações do JWT
 type JWTConfig struct {
 	Secret          string
+	Duration 		time.Duration
 	AccessTokenExp  time.Duration
 	RefreshTokenExp time.Duration
 }

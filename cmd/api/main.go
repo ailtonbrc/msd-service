@@ -4,10 +4,11 @@ import (
 	"log"
 
 	"clinica_server/config"
-	"clinica_server/internal/api/server"
 	"clinica_server/internal/db"
-)
+	"clinica_server/internal/server"
 
+	"go.uber.org/zap"
+)
 func main() {
 	// Carregar configurações clinica_server
 	cfg, err := config.Load()
@@ -15,6 +16,16 @@ func main() {
 		log.Fatalf("Erro ao carregar configurações: %v", err)
 	}
 
+	// Configurar logger
+	logger, err := zap.NewProduction()
+	if cfg.Environment == "development" {
+		logger, err = zap.NewDevelopment()
+	}
+	if err != nil {
+		log.Fatalf("Erro ao configurar logger: %v", err)
+	}
+	defer logger.Sync()
+	
 	// Inicializar banco de dados
 	database, err := db.InitDB(cfg)
 	if err != nil {

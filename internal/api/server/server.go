@@ -11,10 +11,18 @@ import (
 	"time"
 
 	"clinica_server/config"
+	"clinica_server/internal/api/handlers"
+	"clinica_server/internal/api/middleware"
 	"clinica_server/internal/api/routes"
+	"clinica_server/internal/auth"
+	"clinica_server/internal/models"
+	"clinica_server/internal/repository"
+	"clinica_server/internal/service"
+	"clinica_server/internal/validator"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -23,10 +31,20 @@ type Server struct {
 	router *gin.Engine
 	cfg    *config.Config
 	db     *gorm.DB
+	logger *zap.Logger
 }
 
 // NewServer cria uma nova instância do servidor
 func NewServer(cfg *config.Config, db *gorm.DB) *Server {
+	// Configurar logger
+	logger, err := zap.NewProduction()
+	if cfg.Environment == "development" {
+		logger, err = zap.NewDevelopment()
+	}
+	if err != nil {
+		log.Fatalf("Erro ao configurar logger: %v", err)
+	}
+
 	router := gin.Default()
 
 	// Configurar CORS
@@ -43,6 +61,7 @@ func NewServer(cfg *config.Config, db *gorm.DB) *Server {
 		router: router,
 		cfg:    cfg,
 		db:     db,
+		logger: logger,
 	}
 }
 
@@ -66,15 +85,15 @@ func (s *Server) Run() error {
 
 	// Iniciar servidor em uma goroutine
 	go func() {
-		log.Printf("Servidor iniciado na porta %s", s.cfg.Server.Port)
+		s.logger.Info("Servidor iniciado", zap.String("porta", s.cfg.Server.Port))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Erro ao iniciar servidor: %v", err)
+			s.logger.Fatal("Erro ao iniciar servidor", zap.Error(err))
 		}
 	}()
 
 	// Aguardar sinal de interrupção
 	<-quit
-	log.Println("Desligando servidor...")
+	s.logger.Info("Desligando servidor...")
 
 	// Contexto com timeout para desligamento gracioso
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -82,10 +101,10 @@ func (s *Server) Run() error {
 
 	// Desligar servidor
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Erro ao desligar servidor: %v", err)
+		s.logger.Fatal("Erro ao desligar servidor", zap.Error(err))
 	}
 
-	log.Println("Servidor desligado com sucesso")
+	s.logger.Info("Servidor desligado com sucesso")
 	return nil
 }
 
@@ -94,7 +113,49 @@ func (s *Server) setupRoutes() {
 	// Grupo de rotas da API
 	api := s.router.Group("/api")
 
+	// Configurar serviço JWT
+	jwtService := auth.NewJWTService(s.cfg.JWT.Secret)
+	
+	// Configurar middleware de autenticação
+	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
+	
+	// Configurar repositórios
+	pacienteRepo := repository.NewPacienteRepository(s.db)
+	
+	// Configurar conversores de DTO
+	pacienteDTOConverter := models.NewPacienteDTOConverter()
+	
+	// Configurar validadores
+	pacienteValidator := validator.NewPacienteValidator(pacienteRepo)
+	
+	// Configurar serviços
+	pacienteService := service.NewPacienteService(pacienteRepo, pacienteValidator, pacienteDTOConverter)
+	
+	// Configurar handlers
+	pacienteHandler := handlers.NewPacienteHandler(pacienteService, s.logger)
+
 	// Configurar rotas para cada módulo
 	routes.ConfiguraRotasDeAutenticacao(api, s.db, s.cfg)
 	routes.ConfiguraRotasDeUsuario(api, s.db)
+	
+	// Configurar rotas de pacientes
+	routes.SetupPacienteRoutes(s.router, pacienteHandler, authMiddleware, s.logger)
+	
+	// Rota de verificação de saúde do servidor
+	s.router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status": "ok",
+			"time":   time.Now().Format(time.RFC3339),
+		})
+	})
+	
+	// Rota para endpoints não encontrados
+	s.router.NoRoute(func(c *gin.Context) {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error":   "Não encontrado",
+			"message": "Endpoint não encontrado",
+		})
+	})
+	
+	s.logger.Info("Rotas configuradas com sucesso")
 }
