@@ -5,86 +5,88 @@ import (
 	"strconv"
 )
 
-// ValidarCPF verifica se o CPF é válido
+// ValidarCPF valida um CPF brasileiro
+// Recebe o CPF a ser validado
+// Retorna true se o CPF for válido, false caso contrário
 func ValidarCPF(cpf string) bool {
-	// Se o CPF estiver vazio, consideramos inválido
-	if cpf == "" {
-		return false
-	}
+	// Remover caracteres não numéricos
+	re := regexp.MustCompile(`[^0-9]`)
+	cpf = re.ReplaceAllString(cpf, "")
 
-	// Remove caracteres não numéricos
-	cpf = LimparCPF(cpf)
-
-	// Verifica se o CPF tem 11 dígitos
+	// Verificar tamanho
 	if len(cpf) != 11 {
 		return false
 	}
 
-	// Verifica se todos os dígitos são iguais
-	if todosDigitosIguais(cpf) {
+	// Verificar se todos os dígitos são iguais
+	if allDigitsEqual(cpf) {
 		return false
 	}
 
-	// Calcula e verifica o primeiro dígito verificador
-	d1 := calcularDigitoVerificador(cpf, 9)
-	if d1 != int(cpf[9]-'0') {
+	// Calcular primeiro dígito verificador
+	sum := 0
+	for i := 0; i < 9; i++ {
+		digit, _ := strconv.Atoi(string(cpf[i]))
+		sum += digit * (10 - i)
+	}
+	remainder := sum % 11
+	if remainder < 2 {
+		remainder = 0
+	} else {
+		remainder = 11 - remainder
+	}
+
+	// Verificar primeiro dígito
+	firstDigit, _ := strconv.Atoi(string(cpf[9]))
+	if remainder != firstDigit {
 		return false
 	}
 
-	// Calcula e verifica o segundo dígito verificador
-	d2 := calcularDigitoVerificador(cpf, 10)
-	if d2 != int(cpf[10]-'0') {
-		return false
+	// Calcular segundo dígito verificador
+	sum = 0
+	for i := 0; i < 10; i++ {
+		digit, _ := strconv.Atoi(string(cpf[i]))
+		sum += digit * (11 - i)
+	}
+	remainder = sum % 11
+	if remainder < 2 {
+		remainder = 0
+	} else {
+		remainder = 11 - remainder
 	}
 
-	return true
+	// Verificar segundo dígito
+	secondDigit, _ := strconv.Atoi(string(cpf[10]))
+	return remainder == secondDigit
 }
 
-// LimparCPF remove caracteres não numéricos do CPF
-func LimparCPF(cpf string) string {
-	re := regexp.MustCompile(`[^0-9]`)
-	return re.ReplaceAllString(cpf, "")
-}
-
-// todosDigitosIguais verifica se todos os dígitos do CPF são iguais
-func todosDigitosIguais(cpf string) bool {
-	first := cpf[0]
-	for i := 1; i < len(cpf); i++ {
-		if cpf[i] != first {
+// allDigitsEqual verifica se todos os dígitos de uma string são iguais
+func allDigitsEqual(s string) bool {
+	if len(s) == 0 {
+		return true
+	}
+	first := s[0]
+	for i := 1; i < len(s); i++ {
+		if s[i] != first {
 			return false
 		}
 	}
 	return true
 }
 
-// calcularDigitoVerificador calcula o dígito verificador do CPF
-func calcularDigitoVerificador(cpf string, pos int) int {
-	var soma int
-	var peso int = pos + 1
-
-	// Soma os produtos dos dígitos pelos pesos
-	for i := 0; i < pos; i++ {
-		digito, _ := strconv.Atoi(string(cpf[i]))
-		soma += digito * peso
-		peso--
-	}
-
-	// Calcula o resto da divisão por 11
-	resto := soma % 11
-	
-	// Se o resto for menor que 2, o dígito é 0, senão é 11 - resto
-	if resto < 2 {
-		return 0
-	}
-	return 11 - resto
-}
-
-// FormatarCPF formata o CPF no padrão XXX.XXX.XXX-XX
+// FormatarCPF formata um CPF no padrão XXX.XXX.XXX-XX
+// Recebe o CPF a ser formatado
+// Retorna o CPF formatado
 func FormatarCPF(cpf string) string {
-	cpf = LimparCPF(cpf)
+	// Remover caracteres não numéricos
+	re := regexp.MustCompile(`[^0-9]`)
+	cpf = re.ReplaceAllString(cpf, "")
+
+	// Verificar tamanho
 	if len(cpf) != 11 {
-		return cpf // Retorna o original se não tiver 11 dígitos
+		return cpf
 	}
-	
+
+	// Formatar CPF
 	return cpf[0:3] + "." + cpf[3:6] + "." + cpf[6:9] + "-" + cpf[9:11]
 }

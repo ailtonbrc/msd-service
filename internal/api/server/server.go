@@ -142,6 +142,7 @@ func (s *Server) setupRoutes() {
 	authMiddleware := middleware.NewAuthMiddleware(jwtService, s.logger)
 	
 	// Configurar repositórios
+	usuarioRepo := repository.NewUsuarioRepository(s.db)
 	pacienteRepo := repository.NewPacienteRepository(s.db)
 	
 	// Configurar conversores de DTO
@@ -151,23 +152,27 @@ func (s *Server) setupRoutes() {
 	pacienteValidator := validator.NewPacienteValidator(pacienteRepo)
 	
 	// Configurar serviços
+	authService := service.NewAuthService(usuarioRepo, jwtService, s.cfg.JWT.AccessTokenExp, s.cfg.JWT.RefreshTokenExp)
 	pacienteService := service.NewPacienteService(pacienteRepo, pacienteValidator, pacienteDTOConverter)
 	
 	// Configurar handlers
+	authHandler := handlers.NewAuthHandler(authService, s.logger)
+	usuarioHandler := handlers.NewUsuarioHandler(usuarioRepo, s.logger)
 	pacienteHandler := handlers.NewPacienteHandler(pacienteService, s.logger)
 
-	// Configurar rotas para cada módulo - Passando authMiddleware em vez de cfg
+	// Configurar rotas para cada módulo
 	routes.ConfiguraRotasDeAutenticacao(api, s.db, authMiddleware)
 	routes.ConfiguraRotasDeUsuario(api, s.db, authMiddleware)
 	
 	// Configurar rotas de pacientes
-	routes.SetupPacienteRoutes(s.router, pacienteHandler, authMiddleware, s.logger)
+	routes.SetupPacienteRoutes(api, pacienteHandler, authMiddleware, s.logger)
 	
 	// Rota de verificação de saúde do servidor
 	s.router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"status": "ok",
 			"time":   time.Now().Format(time.RFC3339),
+			"version": "1.0.0", // Versão da API
 		})
 	})
 	
@@ -181,3 +186,31 @@ func (s *Server) setupRoutes() {
 	
 	s.logger.Info("Rotas configuradas com sucesso")
 }
+
+// Adicionar ao método setupRoutes no arquivo server.go
+
+// Configurar repositórios
+usuarioRepo := repository.NewUsuarioRepository(s.db)
+pacienteRepo := repository.NewPacienteRepository(s.db)
+
+// Configurar conversores de DTO
+pacienteDTOConverter := models.NewPacienteDTOConverter()
+
+// Configurar validadores
+pacienteValidator := validator.NewPacienteValidator(pacienteRepo)
+
+// Configurar serviços
+authService := service.NewAuthService(usuarioRepo, jwtService, s.cfg.JWT.AccessTokenExp, s.cfg.JWT.RefreshTokenExp)
+pacienteService := service.NewPacienteService(pacienteRepo, pacienteValidator, pacienteDTOConverter)
+
+// Configurar handlers
+authHandler := handlers.NewAuthHandler(authService, s.logger)
+usuarioHandler := handlers.NewUsuarioHandler(usuarioRepo, s.logger)
+pacienteHandler := handlers.NewPacienteHandler(pacienteService, s.logger)
+
+// Configurar rotas para cada módulo
+routes.ConfiguraRotasDeAutenticacao(api, s.db, authMiddleware)
+routes.ConfiguraRotasDeUsuario(api, s.db, authMiddleware)
+
+// Configurar rotas de pacientes
+routes.SetupPacienteRoutes(api, pacienteHandler, authMiddleware, s.logger)

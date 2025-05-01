@@ -18,9 +18,9 @@ func (c CPF) Formatar() string {
 	return FormatarCPF(string(c))
 }
 
-func (c CPF) Limpar() string {
-	return LimparCPF(string(c))
-}
+// func (c CPF) Limpar() string {
+// 	return LimparCPF(string(c))
+// }
 
 // Criar um novo CPF a partir de uma string
 func NovoCPF(cpf string) CPF {

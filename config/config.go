@@ -64,15 +64,22 @@ func Load() (*Config, error) {
 	dbSSLMode 	:= getEnv("DB_SSLMODE", "disable")
 
 	// Configurações do JWT
-	jwtSecret 		:= getEnv("JWT_SECRET", "your-secret-key")
-	jwtAccessExp, _ := strconv.Atoi(getEnv("JWT_ACCESS_EXP", "15"))      // 15 minutos
+	jwtSecret := getEnv("JWT_SECRET", "your-secret-key")
+	
+	// FORÇAR valor de expiração para desenvolvimento
+	jwtAccessExp := 360 // 6 horas para desenvolvimento
+	fmt.Printf("DEBUG: JWT_ACCESS_EXP FORÇADO para %d minutos\n", jwtAccessExp)
+	
 	jwtRefreshExp, _ := strconv.Atoi(getEnv("JWT_REFRESH_EXP", "10080")) // 7 dias
+
+	// Ambiente
+	environment := getEnv("ENVIRONMENT", "development")
 
 	log.Println("✅ Configurações carregadas com sucesso")
 	log.Printf("🗄️ Conectando ao banco: %s@%s:%s/%s", dbUser, dbHost, dbPort, dbName)
 	log.Printf("🔐 JWT Secret (parcial): %s...", jwtSecret[:10])
 	
-	return &Config{
+	config := &Config{
 		Server: ServerConfig{
 			Port:         port,
 			ReadTimeout:  time.Duration(readTimeout) * time.Second,
@@ -92,7 +99,15 @@ func Load() (*Config, error) {
 			AccessTokenExp:  time.Duration(jwtAccessExp) * time.Minute,
 			RefreshTokenExp: time.Duration(jwtRefreshExp) * time.Minute,
 		},
-	}, nil
+		Environment: environment,
+	}
+	
+	// Log adicional para verificar se o valor foi corretamente atribuído
+	fmt.Printf("DEBUG: Config.JWT.AccessTokenExp = %v (%d minutos)\n", 
+		config.JWT.AccessTokenExp, 
+		int(config.JWT.AccessTokenExp.Minutes()))
+	
+	return config, nil
 }
 
 // DSN retorna a string de conexão com o banco de dados

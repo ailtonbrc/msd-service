@@ -1,4 +1,3 @@
-// internal/models/paciente.go
 package models
 
 import (
@@ -7,76 +6,53 @@ import (
 	"gorm.io/gorm"
 )
 
+// Paciente representa um paciente no sistema
 type Paciente struct {
-	ID                 uint           `gorm:"primaryKey" json:"id"`
-	Nome               string         `gorm:"not null;size:100" json:"nome"`
-	DataNascimento     time.Time      `json:"data_nascimento"`
-	Genero             string         `gorm:"size:20" json:"genero"`
-	CPF                string         `gorm:"size:14;uniqueIndex" json:"cpf"`
-	RG                 string         `gorm:"size:20" json:"rg"`
-	Diagnostico        string         `gorm:"size:255" json:"diagnostico"`
-	Telefone           string         `gorm:"size:20" json:"telefone"`
-	Email              string         `gorm:"size:100" json:"email"`
-	Endereco           string         `gorm:"size:255" json:"endereco"`
-	Cidade             string         `gorm:"size:100" json:"cidade"`
-	Estado             string         `gorm:"size:2" json:"estado"`
-	CEP                string         `gorm:"size:10" json:"cep"`
-	NomeResponsavel    string         `gorm:"size:100" json:"nome_responsavel"`
-	TelefoneResponsavel string        `gorm:"size:20" json:"telefone_responsavel"`
-	EmailResponsavel   string         `gorm:"size:100" json:"email_responsavel"`
-	Observacoes        string         `gorm:"type:text" json:"observacoes"`
-	Alergias           string         `gorm:"type:text" json:"alergias"`
-	Medicacoes         string         `gorm:"type:text" json:"medicacoes"`
-	CriadoEm           time.Time      `gorm:"autoCreateTime" json:"criado_em"`
-	AtualizadoEm       time.Time      `gorm:"autoUpdateTime" json:"atualizado_em"`
-	DeletedAt          gorm.DeletedAt `gorm:"index" json:"-"`
-	CriadoPor          uint           `gorm:"not null" json:"criado_por"` // ID do usuário que criou
-	AtualizadoPor      uint           `json:"atualizado_por"` // ID do usuário que atualizou
+	ID                  uint           `json:"id" gorm:"primaryKey"`
+	Nome                string         `json:"nome" gorm:"size:100;not null"`
+	DataNascimento      time.Time      `json:"data_nascimento"`
+	Genero              string         `json:"genero" gorm:"size:20"`
+	CPF                 string         `json:"cpf" gorm:"size:14;uniqueIndex"`
+	RG                  string         `json:"rg" gorm:"size:20"`
+	Diagnostico         string         `json:"diagnostico" gorm:"size:255"`
+	Telefone            string         `json:"telefone" gorm:"size:20"`
+	Email               string         `json:"email" gorm:"size:100"`
+	Endereco            string         `json:"endereco" gorm:"size:255"`
+	Cidade              string         `json:"cidade" gorm:"size:100"`
+	Estado              string         `json:"estado" gorm:"size:2"`
+	CEP                 string         `json:"cep" gorm:"size:10"`
+	NomeResponsavel     string         `json:"nome_responsavel" gorm:"size:100"`
+	TelefoneResponsavel string         `json:"telefone_responsavel" gorm:"size:20"`
+	EmailResponsavel    string         `json:"email_responsavel" gorm:"size:100"`
+	Observacoes         string         `json:"observacoes" gorm:"type:text"`
+	Alergias            string         `json:"alergias" gorm:"type:text"`
+	Medicacoes          string         `json:"medicacoes" gorm:"type:text"`
+	CriadoEm            time.Time      `json:"criado_em" gorm:"autoCreateTime"`
+	AtualizadoEm        time.Time      `json:"atualizado_em" gorm:"autoUpdateTime"`
+	DeletedAt           gorm.DeletedAt `json:"-" gorm:"index"`
+	CriadoPor           uint           `json:"criado_por" gorm:"not null"` // ID do usuário que criou
+	AtualizadoPor       uint           `json:"atualizado_por"`             // ID do usuário que atualizou
 }
 
-type CreatePacienteRequest struct {
-	Nome                string    `json:"nome" binding:"required,max=100"`
-	DataNascimento      time.Time `json:"data_nascimento" binding:"required"`
-	Genero              string    `json:"genero" binding:"max=20"`
-	CPF                 string    `json:"cpf" binding:"omitempty,len=14"`
-	RG                  string    `json:"rg" binding:"max=20"`
-	Diagnostico         string    `json:"diagnostico" binding:"max=255"`
-	Telefone            string    `json:"telefone" binding:"required,max=20"`
-	Email               string    `json:"email" binding:"omitempty,email,max=100"`
-	Endereco            string    `json:"endereco" binding:"max=255"`
-	Cidade              string    `json:"cidade" binding:"max=100"`
-	Estado              string    `json:"estado" binding:"max=2"`
-	CEP                 string    `json:"cep" binding:"max=10"`
-	NomeResponsavel     string    `json:"nome_responsavel" binding:"omitempty,max=100"`
-	TelefoneResponsavel string    `json:"telefone_responsavel" binding:"omitempty,max=20"`
-	EmailResponsavel    string    `json:"email_responsavel" binding:"omitempty,email,max=100"`
-	Observacoes         string    `json:"observacoes"`
-	Alergias            string    `json:"alergias"`
-	Medicacoes          string    `json:"medicacoes"`
-}
-
-type UpdatePacienteRequest struct {
-	Nome                string    `json:"nome" binding:"omitempty,max=100"`
-	DataNascimento      time.Time `json:"data_nascimento"`
-	Genero              string    `json:"genero" binding:"max=20"`
-	CPF                 string    `json:"cpf" binding:"omitempty,len=14"`
-	RG                  string    `json:"rg" binding:"max=20"`
-	Diagnostico         string    `json:"diagnostico" binding:"max=255"`
-	Telefone            string    `json:"telefone" binding:"omitempty,max=20"`
-	Email               string    `json:"email" binding:"omitempty,email,max=100"`
-	Endereco            string    `json:"endereco" binding:"max=255"`
-	Cidade              string    `json:"cidade" binding:"max=100"`
-	Estado              string    `json:"estado" binding:"max=2"`
-	CEP                 string    `json:"cep" binding:"max=10"`
-	NomeResponsavel     string    `json:"nome_responsavel" binding:"omitempty,max=100"`
-	TelefoneResponsavel string    `json:"telefone_responsavel" binding:"omitempty,max=20"`
-	EmailResponsavel    string    `json:"email_responsavel" binding:"omitempty,email,max=100"`
-	Observacoes         string    `json:"observacoes"`
-	Alergias            string    `json:"alergias"`
-	Medicacoes          string    `json:"medicacoes"`
-}
-
-// TableName especifica o nome da tabela no banco de dados
+// TableName define o nome da tabela no banco de dados
 func (Paciente) TableName() string {
 	return "pacientes"
+}
+
+// PacienteFiltro define os filtros para busca avançada de pacientes
+type PacienteFiltro struct {
+	Nome        string
+	CPF         string
+	Telefone    string
+	Diagnostico string
+	Page        int
+	PageSize    int
+}
+
+// PaginatedResponse representa uma resposta paginada
+type PaginatedResponse struct {
+	Total    int64       `json:"total"`
+	Page     int         `json:"page"`
+	PageSize int         `json:"page_size"`
+	Data     interface{} `json:"data"`
 }

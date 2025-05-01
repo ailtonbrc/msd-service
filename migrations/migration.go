@@ -29,3 +29,17 @@ func MigrateDB(db *gorm.DB) error {
 	log.Println("Migrações concluídas com sucesso!")
 	return nil
 }
+
+// Adicionar ao arquivo migrate.go ou criar se não existir
+
+// // AutoMigrate realiza a migração automática das tabelas
+// func AutoMigrate(db *gorm.DB) error {
+// 	// Migrar tabelas
+// 	err := db.AutoMigrate(
+// 		&Usuario{},
+// 		&Paciente{}, // Adicionar modelo de paciente
+// 		// Outros modelos...
+// 	)
+	
+// 	return err
+// }
